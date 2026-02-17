@@ -4,27 +4,17 @@ This repository contains a Puppeteer script that:
 
 1. Opens `https://www.bbva.com.ar`
 2. Clicks **Banca Online**
-3. Waits for navigation
-4. Fills document number, user, and password from environment variables
-5. Clicks **Ingresar**
-6. Waits for the next navigation
+3. Waits for navigation to the online banking login
+4. Pauses so you can manually complete login in the browser
+5. Verifies URL includes `https://online.bbva.com.ar/fnetcore/#/globalposition`
+6. Clicks the first account card (`section.product-content`)
+7. Verifies URL changes to the movements route (`.../private/accounts/myproducts/savingsBanks/.../lastMovements`)
 
 ## Setup
 
 ```bash
 npm install
-cp .env.example .env
 ```
-
-Fill your real credentials in `.env`:
-
-```env
-BBVA_DOCUMENT_NUMBER=...
-BBVA_USERNAME=...
-BBVA_PASSWORD=...
-```
-
-> `.env` is ignored via `.gitignore`, so credentials are not committed.
 
 ## Run
 
@@ -32,7 +22,10 @@ BBVA_PASSWORD=...
 npm start
 ```
 
+When prompted in terminal, finish login in the browser and press Enter.
+
 ## Notes
 
-- Uses standard Puppeteer selectors with `waitForSelector`, `click`, `type`, and `waitForNavigation`.
-- If BBVA changes its DOM, selectors may need updates.
+- This flow is intentionally manual for credentials (no env vars used for username/password filling).
+- Uses standard Puppeteer selectors and URL checks via `window.location.href.includes(...)`.
+- If BBVA changes DOM structure or URL fragments, selectors/path fragments may need updates.

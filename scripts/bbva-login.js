@@ -1,15 +1,19 @@
 #!/usr/bin/env node
 
-require('dotenv').config();
 const puppeteer = require('puppeteer');
+const readline = require('node:readline/promises');
+const { stdin: input, stdout: output } = require('node:process');
 
 const BBVA_URL = 'https://www.bbva.com.ar';
+const GLOBAL_POSITION_PATH = '/fnetcore/#/globalposition';
+const MOVEMENTS_PATH_FRAGMENT = '/fnetcore/#/private/accounts/myproducts/savingsBanks/';
 
-const requiredEnv = ['BBVA_DOCUMENT_NUMBER', 'BBVA_USERNAME', 'BBVA_PASSWORD'];
-for (const name of requiredEnv) {
-  if (!process.env[name]) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
+async function waitForUrlContains(page, fragment, timeout = 120000) {
+  await page.waitForFunction(
+    (expected) => window.location.href.includes(expected),
+    { timeout },
+    fragment,
+  );
 }
 
 (async () => {
@@ -17,6 +21,8 @@ for (const name of requiredEnv) {
     headless: false,
     defaultViewport: null,
   });
+
+  const rl = readline.createInterface({ input, output });
 
   try {
     const page = await browser.newPage();
@@ -34,29 +40,22 @@ for (const name of requiredEnv) {
       page.click(bancaOnlineSelector),
     ]);
 
-    const documentInputSelector = 'input[aria-label="Número de documento"]';
-    const userInputSelector = 'input[aria-label="Usuario"]';
-    const passwordInputSelector = 'input[aria-label="Clave"]';
+    console.log('Banca Online opened. Complete login manually in the browser window.');
+    await rl.question('After you submit login and reach Global Position, press Enter to continue... ');
 
-    await page.waitForSelector(documentInputSelector, { visible: true });
-    await page.type(documentInputSelector, process.env.BBVA_DOCUMENT_NUMBER);
+    await waitForUrlContains(page, GLOBAL_POSITION_PATH);
+    console.log(`Reached: ${page.url()}`);
 
-    await page.waitForSelector(userInputSelector, { visible: true });
-    await page.type(userInputSelector, process.env.BBVA_USERNAME);
+    const firstProductSelector = 'section.product-content[role="button"]';
+    await page.waitForSelector(firstProductSelector, { visible: true });
 
-    await page.waitForSelector(passwordInputSelector, { visible: true });
-    await page.type(passwordInputSelector, process.env.BBVA_PASSWORD);
+    await page.click(firstProductSelector);
 
-    const ingresarButtonSelector = 'bbva-button-default-sph[type="submit"][text="Ingresar"]';
-    await page.waitForSelector(ingresarButtonSelector, { visible: true });
+    await waitForUrlContains(page, MOVEMENTS_PATH_FRAGMENT);
 
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
-      page.click(ingresarButtonSelector),
-    ]);
-
-    console.log('Login flow completed.');
+    console.log(`Reached movements page: ${page.url()}`);
   } finally {
+    rl.close();
     await browser.close();
   }
 })().catch((err) => {

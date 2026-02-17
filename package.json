@@ -1,0 +1,16 @@
+{
+  "name": "puppefranc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Puppeteer automation for BBVA Argentina login flow",
+  "main": "scripts/bbva-login.js",
+  "scripts": {
+    "start": "node scripts/bbva-login.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "puppeteer": "latest"
+  }
+}
